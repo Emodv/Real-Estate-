@@ -50,11 +50,19 @@ export default async function PropertyDetailPage({ params }: { params: { id: str
             </div>
           )}
         </div>
-        <form action={deletePropertyAction.bind(null, property.id)}>
-          <button className="rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:border-bad hover:text-bad">
-            Delete
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/properties/${property.id}/memo`}
+            className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+          >
+            📄 Investment Memo
+          </Link>
+          <form action={deletePropertyAction.bind(null, property.id)}>
+            <button className="rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:border-bad hover:text-bad">
+              Delete
+            </button>
+          </form>
+        </div>
       </div>
 
       <UnderwritingReport input={property.input} result={result} />

@@ -15,3 +15,31 @@ body {
 .tnum {
   font-variant-numeric: tabular-nums;
 }
+
+/* ---- Investment memo print styles (A4/Letter friendly) ---- */
+@media print {
+  @page {
+    margin: 16mm;
+  }
+  html,
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  .memo-print {
+    color: #111111 !important;
+    background: #ffffff !important;
+    max-width: 100% !important;
+  }
+  .memo-print .memo-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .memo-print .memo-pagebreak {
+    break-before: page;
+    page-break-before: always;
+  }
+  .memo-print table {
+    font-size: 10px;
+  }
+}

@@ -16,7 +16,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="en">
       <body className="min-h-screen antialiased">
-        <header className="border-b border-border bg-surface">
+        <header className="border-b border-border bg-surface print:hidden">
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
             <Link href={signedIn ? "/dashboard" : "/login"} className="flex items-center gap-2">
               <span className="text-lg font-semibold tracking-tight">
@@ -31,6 +31,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <>
                   <Link href="/dashboard" className="text-muted hover:text-text">
                     Dashboard
+                  </Link>
+                  <Link href="/backtest" className="text-muted hover:text-text">
+                    Backtest
                   </Link>
                   <Link
                     href="/properties/new"
@@ -64,7 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </div>
         </header>
         <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
-        <footer className="mx-auto max-w-6xl px-6 py-10 text-xs text-muted">
+        <footer className="mx-auto max-w-6xl px-6 py-10 text-xs text-muted print:hidden">
           Internal decision-support tool. Every figure is an estimate unless marked
           VERIFIED. The system recommends; the human decides. Never bids automatically.
         </footer>
