@@ -11,6 +11,7 @@ cloud setup.
 |------|----------|
 | `0001_initial_schema.sql` | All tables, UUID PKs, FKs, indexes, `updated_at` triggers. |
 | `0002_rls_policies.sql` | Row Level Security on every table + `handle_new_user` trigger. |
+| `0003_ownership_and_sources.sql` | Phase 1.5 (non-destructive): `created_by`/`updated_by` → `auth.users`, source-provenance columns (`source_type` ∈ USER_ENTERED/GOOGLE_MAPS/MUNICIPAL_SOURCE/ONTARIO_TAX_SALES/OTHER) on `properties` + `comparable_sales`, indexes, and tightened owner policies (owner_id OR created_by; anon denied; restrictive parent-property check on `underwriting_runs`). |
 
 ### Applying migrations
 

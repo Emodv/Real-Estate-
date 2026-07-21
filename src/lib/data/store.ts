@@ -5,6 +5,9 @@ import { randomUUID } from "node:crypto";
 import type { PropertyRecord } from "./schema";
 import { withDefaults } from "@/lib/underwriting";
 import { SAMPLE_PROPERTY_INPUT } from "./sample";
+import { isSupabaseMode } from "@/lib/supabase/client";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { SupabasePropertyStore } from "./supabaseStore";
 
 /**
  * Persistence abstraction.
@@ -112,14 +115,21 @@ class LocalFilePropertyStore implements PropertyStore {
   }
 }
 
-let singleton: PropertyStore | null = null;
+let localSingleton: PropertyStore | null = null;
 
 /**
- * Returns the active property store. Currently always the local file store.
- * When `NEXT_PUBLIC_APP_MODE=supabase`, a `SupabasePropertyStore` (documented
- * in docs/DATABASE.md) will be returned instead — same interface.
+ * Returns the active property store for the current request.
+ *
+ * - `supabase` mode: a fresh, request-scoped `SupabasePropertyStore` bound to
+ *   the caller's session cookies (so RLS applies and writes are owned by the
+ *   signed-in user).
+ * - `local` mode: a process-wide local JSON-file store (no auth).
  */
 export function getPropertyStore(): PropertyStore {
-  if (!singleton) singleton = new LocalFilePropertyStore();
-  return singleton;
+  if (isSupabaseMode()) {
+    const db = createSupabaseServerClient();
+    if (db) return new SupabasePropertyStore(db);
+  }
+  if (!localSingleton) localSingleton = new LocalFilePropertyStore();
+  return localSingleton;
 }

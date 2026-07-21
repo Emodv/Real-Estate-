@@ -158,6 +158,24 @@ type _SchemaMatchesEngine = z.infer<typeof underwritingInputSchema> extends Unde
 const _schemaCheck: _SchemaMatchesEngine = true;
 void _schemaCheck;
 
+/** Where a piece of data originated (provenance), distinct from trust level. */
+export const sourceTypeEnum = z.enum([
+  "USER_ENTERED",
+  "GOOGLE_MAPS",
+  "MUNICIPAL_SOURCE",
+  "ONTARIO_TAX_SALES",
+  "OTHER",
+]);
+export type SourceType = z.infer<typeof sourceTypeEnum>;
+
+export const sourceMetaSchema = z.object({
+  name: z.string().optional(),
+  url: z.string().optional(),
+  date: z.string().optional(),
+  type: sourceTypeEnum.default("USER_ENTERED"),
+});
+export type SourceMeta = z.infer<typeof sourceMetaSchema>;
+
 export const propertySchema = z.object({
   id: z.string(),
   name: z.string().min(1),
@@ -166,6 +184,8 @@ export const propertySchema = z.object({
   county: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  createdBy: z.string().optional(),
+  source: sourceMetaSchema.optional(),
   input: underwritingInputSchema,
 });
 

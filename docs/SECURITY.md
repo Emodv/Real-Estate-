@@ -4,23 +4,39 @@ This is a **private internal application**. Design goals: only authorized
 users reach any data, and no secret ever lands in the repository or the client
 bundle.
 
-## Authentication (supabase mode)
+## Authentication (supabase mode) — implemented (Phase 1.5)
 
-- **Google OAuth** via Supabase Auth. Configure in the Supabase dashboard →
+- **Google OAuth** via Supabase Auth (official `@supabase/ssr` App Router
+  pattern). Configure the provider in the Supabase dashboard →
   Authentication → Providers → Google. The Google client ID/secret live in
-  Supabase, **never** in this repo.
-- Add your authorized redirect URL: `https://<your-app>/auth/callback` (and
+  **Supabase, never in this repo** and are never read by the app.
+- Authorized redirect URL: `https://<your-app>/auth/callback` (and
   `http://localhost:3000/auth/callback` for local dev).
-- Private routes: server components call `createSupabaseServerClient()` and
-  redirect unauthenticated users to sign-in. (Wiring the sign-in route is the
-  first task when switching to supabase mode — the client factory and RLS are
-  already in place.)
+- Flow: `/login` (`GoogleSignIn` → `signInWithOAuth`) →
+  `/auth/callback` (`exchangeCodeForSession`) → `/dashboard`.
+  Sign out: `POST /auth/signout`.
+- **Session refresh + route protection** run in `middleware.ts`
+  (`updateSession`): unauthenticated users hitting any non-public route are
+  redirected to `/login?next=…`.
+- **Page-level guard**: every protected server component calls
+  `requireAuthorizedUser()` — a belt-and-suspenders check on top of middleware.
 
-## Authorization
+## Authorization — email allowlist + RLS
 
-- **Row Level Security** is enabled on every table (`0002_rls_policies.sql`).
-- A user can read/write only rows they own; child rows inherit ownership by
-  join to `properties`. Even a leaked anon key cannot read another user's data.
+- **Allowlist** (`ALLOWED_EMAILS`, server-only): an authenticated Google
+  account not on the list is sent to `/access-denied` (with a sign-out button).
+  **Fail closed** — an empty allowlist denies everyone. Everything routes
+  through `isEmailAllowed()` so it can later become a DB `user_roles` table
+  without touching call sites.
+- **Row Level Security** on every table (`0002_rls_policies.sql`,
+  tightened in `0003_ownership_and_sources.sql`). A user can read/write only
+  rows where `owner_id = auth.uid()` OR `created_by = auth.uid()`; anonymous
+  access (`auth.uid()` null) is always denied. `underwriting_runs` additionally
+  carry a *restrictive* policy requiring the parent property to be owned by the
+  caller. Even a leaked anon key cannot read another user's data.
+- **Local mode** (`NEXT_PUBLIC_APP_MODE` unset/`local`): middleware is inert
+  and a synthetic authorized user is used — **no authentication**. For a
+  trusted single-user machine only; never expose it publicly.
 
 ## Secrets
 

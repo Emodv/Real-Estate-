@@ -20,6 +20,10 @@ export function PropertyForm() {
   const [address, setAddress] = React.useState("");
   const [municipality, setMunicipality] = React.useState("");
   const [county, setCounty] = React.useState("");
+  const [sourceType, setSourceType] = React.useState("USER_ENTERED");
+  const [sourceName, setSourceName] = React.useState("");
+  const [sourceUrl, setSourceUrl] = React.useState("");
+  const [sourceDate, setSourceDate] = React.useState("");
   const [input, setInput] = React.useState<FormInput>(clone(DEFAULT_INPUT));
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -80,7 +84,14 @@ export function PropertyForm() {
     e.preventDefault();
     setPending(true);
     setError(null);
-    const res = await createPropertyAction({ name, address, municipality, county, input });
+    const res = await createPropertyAction({
+      name,
+      address,
+      municipality,
+      county,
+      source: { type: sourceType, name: sourceName, url: sourceUrl, date: sourceDate },
+      input,
+    });
     // On success the action redirects and this line is not reached.
     if (res && !res.ok) {
       setError(res.error);
@@ -137,6 +148,26 @@ export function PropertyForm() {
           Geocoding the subject + comparables lets the engine derive real distances, which raises
           valuation confidence for nearby comps.
         </p>
+      </Section>
+
+      <Section title="Source & Provenance" subtitle="Where this record came from. Distinct from per-field data status.">
+        <div className="grid gap-3 md:grid-cols-4">
+          <Select
+            label="Source type"
+            value={sourceType}
+            onChange={setSourceType}
+            options={[
+              ["USER_ENTERED", "User entered"],
+              ["ONTARIO_TAX_SALES", "Ontario Tax Sales"],
+              ["MUNICIPAL_SOURCE", "Municipal source"],
+              ["GOOGLE_MAPS", "Google Maps"],
+              ["OTHER", "Other"],
+            ]}
+          />
+          <Text label="Source name" value={sourceName} onChange={setSourceName} />
+          <Text label="Source URL" value={sourceUrl} onChange={setSourceUrl} />
+          <Text label="Source date" value={sourceDate} onChange={setSourceDate} placeholder="YYYY-MM-DD" />
+        </div>
       </Section>
 
       <Section title="Tax Sale">
