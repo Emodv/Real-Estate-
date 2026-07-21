@@ -69,6 +69,7 @@ export function MemoDocument({
       <Sec title="Bid Strategy">
         <Grid>
           <KV k="Minimum tender" v={money(memo.bidStrategy.minimumTender)} />
+          <KV k="Opportunistic (steal)" v={money(memo.bidStrategy.opportunisticBid)} />
           <KV k="Conservative bid" v={money(memo.bidStrategy.conservativeBid)} />
           <KV k="Target bid" v={money(memo.bidStrategy.targetBid)} />
           <KV k="Maximum safe bid" v={money(memo.bidStrategy.maximumSafeBid)} strong />

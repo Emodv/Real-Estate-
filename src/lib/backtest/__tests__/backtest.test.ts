@@ -58,6 +58,36 @@ describe("runBacktest — hindsight protection", () => {
   });
 });
 
+describe("decision classification (false BUY / false PASS)", () => {
+  it("flags a FALSE_BUY when reality (actuals) makes a recommended deal fail", () => {
+    // Pre-sale looks buyable; actuals reveal much worse value + rent + reno.
+    const o = runBacktest(SAMPLE_PROPERTY, {
+      actualWinningBid: 130000,
+      actualArv: 150000, // far below predicted ARV
+      actualMonthlyRent: 900, // far below predicted rent
+      actualRenovation: 180000, // blew the budget
+    });
+    if (["STRONG_BUY", "BUY", "CONDITIONAL_BUY"].includes(o.prediction.predictedVerdict)) {
+      expect(o.comparison.decision).toBe("FALSE_BUY");
+    } else {
+      expect(["CORRECT_PASS", "INCONCLUSIVE"]).toContain(o.comparison.decision);
+    }
+  });
+
+  it("is INCONCLUSIVE without post-sale value/rent actuals", () => {
+    const o = runBacktest(SAMPLE_PROPERTY, { actualWinningBid: 130000 });
+    expect(o.comparison.decision).toBe("INCONCLUSIVE");
+  });
+
+  it("scorecard exposes falseBuy count and rate", () => {
+    const bad = runBacktest(SAMPLE_PROPERTY, { actualWinningBid: 130000, actualArv: 150000, actualMonthlyRent: 900, actualRenovation: 180000 });
+    const card = scoreBacktests([{ outcome: bad }]);
+    expect(card).toHaveProperty("falseBuy");
+    expect(card).toHaveProperty("falseBuyRate");
+    expect(card).toHaveProperty("medianValuationErrorPct");
+  });
+});
+
 describe("scoreBacktests", () => {
   it("aggregates verdict counts and outcomes", () => {
     const good = runBacktest(SAMPLE_PROPERTY, { actualWinningBid: 120000, actualSalePriceLater: 410000 });

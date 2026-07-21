@@ -6,6 +6,7 @@ import {
   bindingCeiling,
   valueCeiling,
   valueCeilingMath,
+  maxPriceSatisfying,
 } from "./ceilings";
 import { dealKillerReport } from "./risk";
 import { computeConfidence } from "./confidence";
@@ -96,6 +97,16 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
   const targetBid = roundDollars(maxSafeBid * targetFactor);
   const hardStop = roundDollars(maxSafeBid); // do-not-cross line
 
+  // Opportunistic (steal) bid: the price at which capital is FULLY recovered on
+  // refinance (capitalTrapped <= 0). Clamped to be no higher than the
+  // conservative bid — an opportunistic price is a discount, never a stretch.
+  const fullRecoveryPrice = maxPriceSatisfying(
+    (p) => evaluateBrrrr(p, input).capitalTrapped <= 0,
+    0,
+    Math.max(maxSafeBid, 1),
+  );
+  const opportunisticBid = roundDollars(Math.min(fullRecoveryPrice, conservativeBid));
+
   // 3) BRRRR snapshots.
   const atMaxSafeBid = evaluateBrrrr(maxSafeBid, input);
   const atMinimumTender = evaluateBrrrr(num(input.taxSale.minimumTender), input);
@@ -103,8 +114,17 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
   // 4) Risk / deal-killers.
   const dealKillers = dealKillerReport(input.risks);
 
-  // 5) Confidence, score, SWOT.
-  const confidence = computeConfidence(input);
+  // F3: renovation effectively unknown ($0 with unverified condition).
+  const renovationUnknown =
+    renovationRaw(input.renovation) <= 0 && num(input.renovation.confidence) < 70;
+  if (renovationUnknown) {
+    warnings.push(
+      "Renovation is $0 with unverified condition. UNKNOWN is not $0 — the maximum safe bid is unreliable until a renovation estimate is obtained. Confidence has been capped.",
+    );
+  }
+
+  // 5) Confidence (F2: comp/dispersion-aware), score, SWOT.
+  const confidence = computeConfidence(input, { valuation, scoredComps, renovationUnknown });
   const score = computeScore(input, atMaxSafeBid, maxSafeBid, dealKillers);
   const swot = computeSwot(input, atMaxSafeBid);
 
@@ -132,10 +152,12 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
 
   const valueCeilingAmount = valueCeiling(input);
   const bid: BidStrategy = {
+    opportunisticBid,
     conservativeBid,
     targetBid,
     maximumSafeBid: roundDollars(maxSafeBid),
     hardStop,
+    walkAwayBid: roundDollars(maxSafeBid),
     bindingConstraint,
     ceilings,
     atMaxSafeBid,

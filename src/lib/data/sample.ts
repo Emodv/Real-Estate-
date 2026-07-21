@@ -53,6 +53,7 @@ export const SAMPLE_PROPERTY_INPUT: DeepPartial<UnderwritingInput> = {
     annualUtilities: 0,
     maintenancePct: 0.08,
     managementPct: 0.08,
+    capexPct: 0.05,
     otherAnnualOpEx: 600,
     confidence: 60,
   },

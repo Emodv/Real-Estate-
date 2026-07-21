@@ -37,8 +37,13 @@ export default async function BacktestDetail({ params }: { params: { id: string 
             </Badge>
           </div>
           <div className="text-sm text-muted">
-            Would we have bid? <b className="text-text">{c.wouldWeBid ? "Yes" : "No"}</b> · Could we have won at ≤ max safe bid?{" "}
-            <b className="text-text">{c.couldWeHaveWon ? "Yes" : "No"}</b>
+            <Badge
+              tone={c.decision === "FALSE_BUY" ? "bad" : c.decision === "CORRECT_BUY" || c.decision === "CORRECT_PASS" ? "good" : c.decision === "FALSE_PASS" ? "warn" : "muted"}
+              className="mr-2"
+            >
+              {c.decision.replace("_", " ")}
+            </Badge>
+            {c.decisionRationale}
           </div>
         </div>
       </Card>

@@ -71,11 +71,12 @@ export function UnderwritingReport({
         title="Bid Strategy"
         subtitle="Graduated bid levels. Maximum safe bid = the most restrictive ceiling. Hard stop = do not cross."
       >
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <Stat label="Opportunistic (steal)" value={money(bid.opportunisticBid)} tone="good" sub="full capital recovery" />
           <Stat label="Conservative bid" value={money(bid.conservativeBid)} tone="good" sub="large margin of safety" />
           <Stat label="Target bid" value={money(bid.targetBid)} tone="accent" sub="thesis works well" />
           <Stat label="Maximum safe bid" value={money(bid.maximumSafeBid)} tone="warn" sub="recommended ceiling" />
-          <Stat label="Hard stop" value={money(bid.hardStop)} tone="bad" sub="do NOT bid above" />
+          <Stat label="Walk-away" value={money(bid.walkAwayBid)} tone="bad" sub="do NOT bid above" />
         </div>
         <div className="mt-3 rounded-lg border border-border bg-surface2 p-3 text-xs text-muted">
           Minimum tender is <span className="font-semibold text-text">{money(input.taxSale.minimumTender)}</span> —

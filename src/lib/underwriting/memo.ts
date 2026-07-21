@@ -57,6 +57,7 @@ export interface MemoThesis {
 
 export interface MemoBidStrategy {
   minimumTender: number;
+  opportunisticBid: number;
   conservativeBid: number;
   targetBid: number;
   maximumSafeBid: number;
@@ -247,10 +248,11 @@ export function buildMemo(
 
   const bidStrategy: MemoBidStrategy = {
     minimumTender: num(input.taxSale.minimumTender),
+    opportunisticBid: result.bid.opportunisticBid,
     conservativeBid: result.bid.conservativeBid,
     targetBid: result.bid.targetBid,
     maximumSafeBid: result.bid.maximumSafeBid,
-    walkAwayBid: result.sensitivity.walkAwayBid,
+    walkAwayBid: result.bid.walkAwayBid,
     recommendedMaxBid: result.bid.maximumSafeBid,
     explanation:
       "Target bid = the price at which the thesis works well. Maximum safe bid = the highest price still justified by the most restrictive constraint (binding: " +
@@ -330,6 +332,7 @@ function buildRental(input: UnderwritingInput, result: UnderwritingResult): Memo
     { label: "Utilities (landlord)", annual: num(input.rental.annualUtilities), status: "ESTIMATED" },
     { label: "Maintenance/repairs reserve", annual: round2(egi * num(input.rental.maintenancePct)), status: "ASSUMED" },
     { label: "Property management", annual: round2(egi * num(input.rental.managementPct)), status: "ASSUMED" },
+    { label: "CapEx reserve", annual: round2(egi * num(input.rental.capexPct)), status: "ASSUMED" },
     { label: "Other operating expenses", annual: num(input.rental.otherAnnualOpEx), status: "ASSUMED" },
   ];
   return {

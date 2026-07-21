@@ -37,20 +37,39 @@ export default async function BacktestDashboard() {
       </div>
 
       <Card>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Scorecard</h2>
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">Decision quality</h2>
+        <p className="mb-3 text-xs text-muted">A FALSE BUY (recommended a deal reality proved bad) is the error we minimize first.</p>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+          <Stat label="Correct BUY" value={card.correctBuy} tone="good" />
+          <Stat label="False BUY" value={card.falseBuy} tone="bad" />
+          <Stat label="Correct PASS" value={card.correctPass} tone="good" />
+          <Stat label="False PASS" value={card.falsePass} tone="warn" />
+          <Stat label="False BUY rate" value={card.falseBuyRate === null ? "—" : `${Math.round(card.falseBuyRate * 100)}%`} tone={card.falseBuyRate && card.falseBuyRate > 0 ? "bad" : "good"} />
+        </div>
+
+        <h2 className="mb-3 mt-6 text-sm font-semibold uppercase tracking-wide text-muted">Accuracy & outcomes</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Stat label="Would have bid" value={card.wouldHaveBid} />
           <Stat label="Winnable ≤ max safe bid" value={card.boughtBelowMaxSafe} tone="good" />
-          <Stat label="Winnable ≤ target bid" value={card.boughtBelowTarget} tone="good" />
           <Stat label="Wanted but outbid" value={card.outbidOnWanted} tone="warn" />
-          <Stat label="Avg valuation error" value={card.avgValuationErrorPct === null ? "—" : `${card.avgValuationErrorPct}%`} />
-          <Stat label="Avg ARV error" value={card.avgArvErrorPct === null ? "—" : `${card.avgArvErrorPct}%`} />
-          <Stat label="Avg rent error" value={card.avgRentErrorPct === null ? "—" : `${card.avgRentErrorPct}%`} />
+          <Stat label="Inconclusive" value={card.inconclusive} tone="muted" />
+          <Stat label="Valuation error (avg / med)" value={`${fmt(card.avgValuationErrorPct)} / ${fmt(card.medianValuationErrorPct)}`} />
+          <Stat label="Renovation error (avg / med)" value={`${fmt(card.avgRenovationErrorPct)} / ${fmt(card.medianRenovationErrorPct)}`} />
+          <Stat label="Rent error (avg / med)" value={`${fmt(card.avgRentErrorPct)} / ${fmt(card.medianRentErrorPct)}`} />
           <Stat label="Capital if all won" value={money(card.totalCapitalIfBidAtMaxSafe)} />
         </div>
+
+        {card.patternFlags.length > 0 && (
+          <div className="mt-4 rounded-lg border border-warn/40 bg-warn/10 p-3">
+            <div className="mb-1 text-xs font-semibold uppercase text-warn">Systematic bias (error analysis)</div>
+            <ul className="space-y-1 text-xs text-muted">
+              {card.patternFlags.map((f, i) => <li key={i}>• {f}</li>)}
+            </ul>
+          </div>
+        )}
         <p className="mt-3 text-xs text-muted">
-          Valuation/ARV/rent errors are only computed where a post-sale actual was recorded; they use
-          later known values, never leaked into the prediction.
+          Errors are computed only where a post-sale actual was recorded; they use later known values,
+          never leaked into the prediction.
         </p>
       </Card>
 
@@ -95,6 +114,10 @@ export default async function BacktestDashboard() {
       </div>
     </div>
   );
+}
+
+function fmt(n: number | null): string {
+  return n === null ? "—" : `${n}%`;
 }
 
 function Field({ label, value }: { label: string; value: string }) {

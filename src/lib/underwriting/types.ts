@@ -155,6 +155,9 @@ export interface RentalInput {
   maintenancePct: number;
   /** Property management as a fraction of effective gross income. */
   managementPct: number;
+  /** Long-term capital expenditure reserve as a fraction of EGI (distinct from
+   *  maintenance). Reserving for roof/furnace/windows cycles keeps NOI honest. */
+  capexPct: number;
   /** Additional fixed annual operating expenses. */
   otherAnnualOpEx: number;
   /** 0-100 confidence in the rent estimate. */
@@ -340,10 +343,14 @@ export interface DealKillerReport {
 }
 
 export interface BidStrategy {
+  /** Steal price: full capital recovery on refinance (exceptional BRRRR). ≤ conservative. */
+  opportunisticBid: number;
   conservativeBid: number;
   targetBid: number;
   maximumSafeBid: number;
   hardStop: number;
+  /** Do-not-cross price (equals the maximum safe bid). */
+  walkAwayBid: number;
   bindingConstraint: BidCeilingKey;
   ceilings: BidCeiling[];
   /** BRRRR model evaluated at the maximum safe bid. */

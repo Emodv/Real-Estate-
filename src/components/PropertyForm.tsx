@@ -258,6 +258,7 @@ export function PropertyForm() {
           <Num label="Utilities / yr ($)" path="rental.annualUtilities" input={input} onNum={num} />
           <Num label="Maintenance (0–1 of EGI)" path="rental.maintenancePct" input={input} onNum={num} step="0.01" />
           <Num label="Management (0–1 of EGI)" path="rental.managementPct" input={input} onNum={num} step="0.01" />
+          <Num label="CapEx reserve (0–1 of EGI)" path="rental.capexPct" input={input} onNum={num} step="0.01" />
           <Num label="Other opex / yr ($)" path="rental.otherAnnualOpEx" input={input} onNum={num} />
           <Num label="Confidence (0–100)" path="rental.confidence" input={input} onNum={num} />
         </div>

@@ -16,6 +16,7 @@ export * from "./renovationModel";
 export * from "./refinanceScenarios";
 export * from "./sensitivity";
 export * from "./reasons";
+export * from "./ranking";
 export * from "./memo";
 export * from "./engine";
 export * from "./defaults";

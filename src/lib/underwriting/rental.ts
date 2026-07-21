@@ -20,12 +20,14 @@ export function rentalMath(input: RentalInput): RentalMath {
 
   const maintenance = round2(effectiveGrossIncome * Math.max(num(input.maintenancePct), 0));
   const management = round2(effectiveGrossIncome * Math.max(num(input.managementPct), 0));
+  const capex = round2(effectiveGrossIncome * Math.max(num(input.capexPct), 0));
   const operatingExpenses = round2(
     Math.max(num(input.annualPropertyTax), 0) +
       Math.max(num(input.annualInsurance), 0) +
       Math.max(num(input.annualUtilities), 0) +
       maintenance +
       management +
+      capex +
       Math.max(num(input.otherAnnualOpEx), 0),
   );
 

@@ -165,6 +165,7 @@ export const underwritingInputSchema = z.object({
     annualUtilities: money,
     maintenancePct: pct,
     managementPct: pct,
+    capexPct: pct,
     otherAnnualOpEx: money,
     confidence: z.coerce.number().min(0).max(100),
   }),
