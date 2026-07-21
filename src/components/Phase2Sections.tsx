@@ -126,6 +126,45 @@ export function AnalyticsSections({
         </Section>
       )}
 
+      {/* Rent range + itemized operating expenses */}
+      <Section title="Rental — Rent Range & NOI" subtitle="Rent low/base/high. The Max Safe Bid uses BASE rent, never the optimistic high.">
+        <div className="grid grid-cols-3 gap-3">
+          <ValueBox label="Low rent" value={result.rent.low} />
+          <ValueBox label="Base rent (used for bid)" value={result.rent.base} highlight />
+          <ValueBox label="High rent" value={result.rent.high} />
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          {result.rent.method}
+          {result.rent.illustrative ? " — illustrative (insufficient rental comps)" : ""} · confidence {result.rent.confidence}/100
+          {result.rent.notes.map((n, i) => (
+            <span key={i} className="block text-warn">⚠ {n}</span>
+          ))}
+        </p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <tbody>
+              <Line label="Gross potential rent" value={money(result.noiBreakdown.grossPotentialRent)} />
+              <Line label="Less vacancy" value={`−${money(result.noiBreakdown.vacancy)}`} />
+              <Line label="Effective gross income" value={money(result.noiBreakdown.effectiveGrossIncome)} strong />
+              {result.operatingExpenses.map((o, i) => (
+                <Line key={i} label={`  ${o.label} (${o.basis}, ${o.status})`} value={`−${money(o.amount)}`} />
+              ))}
+              <Line label="Net operating income (NOI)" value={money(result.noiBreakdown.noi)} strong />
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+          {(["low", "base", "high"] as const).map((k) => (
+            <div key={k} className="rounded-lg border border-border bg-surface2 p-3">
+              <div className="text-xs uppercase text-muted">{k} rent scenario</div>
+              <div className="tnum">Rent {money(result.rentScenarios[k].monthlyRent)}/mo</div>
+              <div className="tnum">NOI {money(result.rentScenarios[k].noi)}</div>
+              <div className="tnum">Cash flow {money(result.rentScenarios[k].monthlyCashFlow)}/mo</div>
+            </div>
+          ))}
+        </div>
+      </Section>
+
       {/* Renovation model */}
       <Section title="Renovation Model" subtitle="Low / base / high by line item, with an explicit data status. Unknowns are never treated as known.">
         <div className="grid grid-cols-3 gap-3">
@@ -236,6 +275,15 @@ export function AnalyticsSections({
         <p className="text-xs text-muted">Strategy: {input.strategy} (bid ceilings adapt via the cash-flow / value constraints).</p>
       )}
     </>
+  );
+}
+
+function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
+  return (
+    <tr className={`border-b border-border/40 ${strong ? "font-semibold" : ""}`}>
+      <td className="py-1.5 text-muted">{label}</td>
+      <td className="py-1.5 text-right tnum">{value}</td>
+    </tr>
   );
 }
 

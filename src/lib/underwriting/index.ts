@@ -3,6 +3,7 @@ export * from "./money";
 export * from "./acquisition";
 export * from "./renovation";
 export * from "./rental";
+export * from "./rentEstimate";
 export * from "./brrrr";
 export * from "./ceilings";
 export * from "./risk";

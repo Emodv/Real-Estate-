@@ -121,6 +121,7 @@ export function withDefaults(partial: DeepPartial<UnderwritingInput>): Underwrit
     renovationLineItems: partial.renovationLineItems
       ? (partial.renovationLineItems as UnderwritingInput["renovationLineItems"])
       : [],
+    rentalComps: partial.rentalComps ? (partial.rentalComps as UnderwritingInput["rentalComps"]) : [],
   };
 }
 

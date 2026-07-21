@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getBacktestStore } from "@/lib/data/backtestStore";
 import { scoreBacktests } from "@/lib/backtest/backtest";
+import { calibrateConfidence } from "@/lib/backtest/confidenceCalibration";
+import { assessModelHealth } from "@/lib/backtest/modelHealth";
 import { requireAuthorizedUser } from "@/lib/auth/session";
 import { Badge, Card, Stat } from "@/components/ui";
 import { money, VERDICT_LABEL, verdictTone } from "@/lib/format";
@@ -10,7 +12,11 @@ export const dynamic = "force-dynamic";
 export default async function BacktestDashboard() {
   await requireAuthorizedUser();
   const records = await getBacktestStore().list();
-  const card = scoreBacktests(records.map((r) => ({ outcome: r.outcome })));
+  const outcomes = records.map((r) => r.outcome);
+  const card = scoreBacktests(outcomes.map((outcome) => ({ outcome })));
+  const calibration = calibrateConfidence(outcomes);
+  const health = assessModelHealth(card, calibration);
+  const healthTone = health.status === "GREEN" ? "good" : health.status === "RED" ? "bad" : health.status === "YELLOW" ? "warn" : "muted";
 
   return (
     <div className="space-y-8">
@@ -35,6 +41,23 @@ export default async function BacktestDashboard() {
         <Stat label="Pass" value={card.pass} tone="muted" />
         <Stat label="Strong Pass" value={card.strongPass} tone="bad" />
       </div>
+
+      <Card className={`border-2 ${healthTone === "good" ? "border-good/50" : healthTone === "bad" ? "border-bad/50" : healthTone === "warn" ? "border-warn/50" : "border-border"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Model Health</h2>
+          <Badge tone={healthTone as "good" | "bad" | "warn" | "muted"} className="px-3 py-1 text-base">{health.status.replace("_", " ")}</Badge>
+        </div>
+        <p className="mt-2 text-sm">{health.headline}</p>
+        <ul className="mt-3 space-y-1 text-xs">
+          {health.checks.map((c, i) => (
+            <li key={i} className="flex gap-2">
+              <span>{c.pass === true ? "✅" : c.pass === false ? "❌" : "▫️"}</span>
+              <span className="text-muted"><b className="text-text">{c.label}:</b> {c.detail}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-xs text-muted">Thresholds are provisional governance rules (docs/MODEL_GOVERNANCE.md), not scientific truth. GREEN is never &ldquo;a few tests passed&rdquo;.</p>
+      </Card>
 
       <Card>
         <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">Decision quality</h2>
@@ -71,6 +94,36 @@ export default async function BacktestDashboard() {
           Errors are computed only where a post-sale actual was recorded; they use later known values,
           never leaked into the prediction.
         </p>
+      </Card>
+
+      <Card>
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-muted">Bid-gap classification</h2>
+        <p className="mb-3 text-xs text-muted">Where the actual winning bid landed on our ladder. &ldquo;Could have won&rdquo; ≠ &ldquo;should have bought&rdquo;.</p>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <Stat label="Bought within safe (≤ target)" value={card.boughtWithinSafe} tone="good" />
+          <Stat label="Above target, ≤ max safe" value={card.aboveTargetBelowMax} tone="warn" />
+          <Stat label="Overbid (> max safe)" value={card.overbid} tone="bad" />
+        </div>
+
+        <h2 className="mb-1 mt-6 text-sm font-semibold uppercase tracking-wide text-muted">Confidence calibration</h2>
+        <p className="mb-2 text-xs text-muted">{calibration.note}</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="uppercase text-muted">
+              <tr className="border-b border-border"><th className="py-2 pr-3">Band</th><th className="py-2 pr-3">N</th><th className="py-2 pr-3">Median abs. valuation error</th><th className="py-2">False-BUY rate</th></tr>
+            </thead>
+            <tbody>
+              {calibration.bands.map((b) => (
+                <tr key={b.band} className="border-b border-border/50">
+                  <td className="py-2 pr-3">{b.band}</td>
+                  <td className="py-2 pr-3 tnum">{b.n}</td>
+                  <td className="py-2 pr-3 tnum">{b.medianAbsValuationErrorPct === null ? "—" : `${b.medianAbsValuationErrorPct}%`}</td>
+                  <td className="py-2 tnum">{b.falseBuyRate === null ? "—" : `${Math.round(b.falseBuyRate * 100)}%`}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       <div>

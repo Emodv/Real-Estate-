@@ -1,5 +1,5 @@
 import type { BidStrategy, UnderwritingInput, UnderwritingResult } from "./types";
-import { clamp, num, roundDollars } from "./money";
+import { clamp, num, round2, roundDollars } from "./money";
 import { evaluateBrrrr } from "./brrrr";
 import {
   computeCeilings,
@@ -14,6 +14,8 @@ import { computeScore } from "./score";
 import { computeSwot } from "./swot";
 import { computeVerdict, buildCommittee } from "./verdict";
 import { withDerivedDistances } from "@/lib/geo/distance";
+import { estimateRent } from "./rentEstimate";
+import { rentalMath } from "./rental";
 import { scoreComps, DEFAULT_COMP_WEIGHTS, type ScoredComp } from "./comps";
 import { deriveMarketValue, type MarketValuation } from "./valuation";
 import { buildRenovationModel } from "./renovationModel";
@@ -84,7 +86,16 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
   // when available. No network — coordinates in, distances out.
   const distanced = withDerivedDistances(rawInput);
   // Comps -> valuation, seeding blank value inputs (see applyValuation).
-  const { input, scoredComps, valuation } = applyValuation(distanced);
+  const { input: valuedInput, scoredComps, valuation } = applyValuation(distanced);
+
+  // Rent estimate (low/base/high). When rental comps exist, the engine uses the
+  // comp-derived BASE rent for all downstream math (NOI, ceilings, MSB). MSB
+  // never uses the optimistic high rent.
+  const rent = estimateRent(valuedInput);
+  const input: UnderwritingInput =
+    (valuedInput.rentalComps?.length ?? 0) > 0
+      ? { ...valuedInput, rental: { ...valuedInput.rental, monthlyMarketRent: rent.base } }
+      : valuedInput;
 
   // 1) Bid ceilings & the binding constraint -> maximum safe bid.
   const ceilings = computeCeilings(input);
@@ -184,6 +195,30 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
 
   const strategy = input.strategy ?? "BRRRR";
 
+  // 8) Phase 3.5 transparency: rent scenarios + itemized opex / NOI breakdown.
+  const baseMath = rentalMath(input.rental);
+  const annualDebtService = atMaxSafeBid.annualDebtService;
+  const rentScenarioAt = (monthlyRent: number) => {
+    const m = rentalMath({ ...input.rental, monthlyMarketRent: monthlyRent });
+    return {
+      monthlyRent: roundDollars(monthlyRent),
+      noi: m.noi,
+      monthlyCashFlow: Math.round(((m.noi - annualDebtService) / 12) * 100) / 100,
+    };
+  };
+  const rentScenarios = {
+    low: rentScenarioAt(rent.low),
+    base: rentScenarioAt(rent.base),
+    high: rentScenarioAt(rent.high),
+  };
+  const noiBreakdown = {
+    grossPotentialRent: baseMath.grossAnnualRent,
+    vacancy: round2(baseMath.grossAnnualRent - baseMath.effectiveGrossIncome),
+    effectiveGrossIncome: baseMath.effectiveGrossIncome,
+    operatingExpenses: baseMath.operatingExpenses,
+    noi: baseMath.noi,
+  };
+
   return {
     strategy,
     verdict,
@@ -201,5 +236,9 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
     refinanceScenarios: refiScenarios,
     sensitivity: sens,
     reasons,
+    rent,
+    rentScenarios,
+    operatingExpenses: baseMath.opexItems,
+    noiBreakdown,
   };
 }

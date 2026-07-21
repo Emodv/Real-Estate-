@@ -233,6 +233,22 @@ export interface UnderwritingInput {
   comps?: import("./comps").CompProperty[];
   compWeights?: import("./comps").CompWeights;
   renovationLineItems?: import("./renovationModel").RenoLineItem[];
+  rentalComps?: RentalComp[];
+}
+
+export interface RentalComp {
+  address?: string;
+  monthlyRent: number;
+  dateObserved?: string; // ISO
+  bedrooms?: number;
+  bathrooms?: number;
+  buildingSqft?: number;
+  propertyType?: string;
+  distanceKm?: number;
+  furnished?: boolean;
+  utilitiesIncluded?: boolean;
+  source: string;
+  dataStatus: DataStatus;
 }
 
 // ---------------------------------------------------------------------------
@@ -386,4 +402,23 @@ export interface UnderwritingResult {
   refinanceScenarios: import("./refinanceScenarios").RefinanceScenario[];
   sensitivity: import("./sensitivity").SensitivityResult;
   reasons: import("./reasons").ReasonsResult;
+  // Phase 3.5 transparency
+  rent: import("./rentEstimate").RentEstimate;
+  rentScenarios: { low: RentScenario; base: RentScenario; high: RentScenario };
+  operatingExpenses: import("./rental").OpexLine[];
+  noiBreakdown: NoiBreakdown;
+}
+
+export interface RentScenario {
+  monthlyRent: number;
+  noi: number;
+  monthlyCashFlow: number;
+}
+
+export interface NoiBreakdown {
+  grossPotentialRent: number;
+  vacancy: number;
+  effectiveGrossIncome: number;
+  operatingExpenses: number;
+  noi: number;
 }

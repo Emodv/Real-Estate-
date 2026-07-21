@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { DEFAULT_INPUT } from "@/lib/underwriting";
-import type { RiskItem, EvidenceItem, CompProperty } from "@/lib/underwriting";
+import type { RiskItem, EvidenceItem, CompProperty, RentalComp } from "@/lib/underwriting";
 import { SAMPLE_PROPERTY_INPUT } from "@/lib/data/sample";
 import { withDefaults } from "@/lib/underwriting";
 import { createPropertyAction, geocodeAddressAction } from "@/app/actions";
@@ -288,6 +288,7 @@ export function PropertyForm() {
       </Section>
 
       <CompsEditor comps={input.comps ?? []} onChange={(comps) => setInput((p) => ({ ...clone(p), comps }))} />
+      <RentalCompsEditor comps={input.rentalComps ?? []} onChange={(rentalComps) => setInput((p) => ({ ...clone(p), rentalComps }))} />
       <RiskEditor risks={input.risks} onChange={(risks) => setInput((p) => ({ ...clone(p), risks }))} />
       <EvidenceEditor evidence={input.evidence} onChange={(evidence) => setInput((p) => ({ ...clone(p), evidence }))} />
 
@@ -446,6 +447,47 @@ function CompsEditor({ comps, onChange }: { comps: CompProperty[]; onChange: (c:
                 <input type="number" step="any" value={c.bathrooms ?? ""} onChange={(e) => update(i, { bathrooms: n(e.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" /></label>
               <label className="block"><span className="mb-1 block text-xs text-muted">Distance (km)</span>
                 <input type="number" step="any" value={c.distanceKm ?? ""} onChange={(e) => update(i, { distanceKm: n(e.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" /></label>
+              <Text label="Source" value={c.source} onChange={(v) => update(i, { source: v })} />
+            </div>
+            <button type="button" onClick={() => remove(i)} className="mt-2 text-xs text-bad hover:underline">Remove</button>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+function RentalCompsEditor({ comps, onChange }: { comps: RentalComp[]; onChange: (c: RentalComp[]) => void }) {
+  function add() {
+    onChange([...comps, { monthlyRent: 0, source: "Rental listing (user-provided)", dataStatus: "USER_PROVIDED" }]);
+  }
+  function update(i: number, patch: Partial<RentalComp>) {
+    onChange(comps.map((c, idx) => (idx === i ? { ...c, ...patch } : c)));
+  }
+  function remove(i: number) {
+    onChange(comps.filter((_, idx) => idx !== i));
+  }
+  const n = (v: string) => (v === "" ? undefined : Number(v));
+  return (
+    <Section
+      title="Rental Comparables"
+      subtitle="Drives the rent range (low/base/high). Base = median comp rent. Never invent rental data."
+      right={<button type="button" onClick={add} className="text-xs text-accent hover:underline">+ Add rental comp</button>}
+    >
+      {comps.length === 0 && <p className="text-sm text-muted">No rental comps — the engine will use an illustrative ±10% band around your single rent estimate.</p>}
+      <div className="space-y-3">
+        {comps.map((c, i) => (
+          <div key={i} className="rounded-lg border border-border bg-surface2 p-3">
+            <div className="grid gap-2 md:grid-cols-4">
+              <Text label="Address" value={c.address ?? ""} onChange={(v) => update(i, { address: v })} />
+              <label className="block"><span className="mb-1 block text-xs text-muted">Monthly rent ($)</span>
+                <input type="number" step="any" value={c.monthlyRent || ""} onChange={(e) => update(i, { monthlyRent: Number(e.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" /></label>
+              <Text label="Date observed (YYYY-MM-DD)" value={c.dateObserved ?? ""} onChange={(v) => update(i, { dateObserved: v })} />
+              <label className="block"><span className="mb-1 block text-xs text-muted">Distance (km)</span>
+                <input type="number" step="any" value={c.distanceKm ?? ""} onChange={(e) => update(i, { distanceKm: n(e.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" /></label>
+              <label className="block"><span className="mb-1 block text-xs text-muted">Bedrooms</span>
+                <input type="number" step="any" value={c.bedrooms ?? ""} onChange={(e) => update(i, { bedrooms: n(e.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" /></label>
+              <label className="flex items-end gap-2 pb-2 text-xs"><input type="checkbox" checked={!!c.utilitiesIncluded} onChange={(e) => update(i, { utilitiesIncluded: e.target.checked })} /> Utilities included</label>
               <Text label="Source" value={c.source} onChange={(v) => update(i, { source: v })} />
             </div>
             <button type="button" onClick={() => remove(i)} className="mt-2 text-xs text-bad hover:underline">Remove</button>

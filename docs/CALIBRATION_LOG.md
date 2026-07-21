@@ -49,6 +49,33 @@ Format: date · change · why · evidence · effect on false-BUY rate / accuracy
 
 ---
 
+## 2026-07-21 — Phase 3.5 (transparency & measurement, no formula tuning)
+
+These are **additive measurement/transparency** changes. No underwriting formula
+was tuned to historical data (governance rule #8).
+
+### C6 · Rent is now a first-class low/base/high output
+- Rent range from rental comps (base = median) or, absent comps, an illustrative
+  ±10% band explicitly labelled as such. **The Max Safe Bid uses BASE rent only**
+  — never the optimistic high.
+- Effect: transparency + prevents silent optimism. No change to how a given base
+  rent flows into the bid.
+
+### C7 · Itemized operating-expense table (status-tagged) + NOI reconciliation
+- Opex is exposed as line items (taxes/insurance/utilities/management/
+  maintenance/CapEx/other) each with basis + KNOWN/ESTIMATED/ASSUMED/UNKNOWN.
+  Verified: items sum to operatingExpenses and NOI = EGI − opex (tested).
+- Effect: auditability. No formula change (CapEx already existed since Phase 3).
+
+### C8 · Backtest bid-gap classification + model health + confidence calibration
+- Added BOUGHT_WITHIN_SAFE / ABOVE_TARGET_BELOW_MAX / OVERBID; median absolute
+  errors; Model Health (RED/YELLOW/GREEN/INSUFFICIENT DATA) with provisional
+  thresholds; confidence-band calibration with an explicit INSUFFICIENT SAMPLE
+  guard.
+- Effect: measurement only. These do not change any prediction.
+
+---
+
 ## How to use this log going forward
 When calibrating against real backtests, add an entry BEFORE changing a formula.
 Record: what changed, why, how many backtests support it, and whether it

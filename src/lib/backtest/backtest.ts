@@ -73,7 +73,15 @@ export interface BacktestComparison {
   /** Post-mortem decision quality using actuals (never affects the prediction). */
   decision: DecisionClass;
   decisionRationale: string;
+  /** Where the actual winning bid landed relative to our bid ladder. */
+  bidClass: BidClass;
 }
+
+/** Actual winning bid vs. our bid ladder. "Could have won" ≠ "should have bought". */
+export type BidClass =
+  | "BOUGHT_WITHIN_SAFE" // winning <= target
+  | "ABOVE_TARGET_BELOW_MAX" // target < winning <= max safe
+  | "OVERBID"; // winning > max safe (we would have lost the auction at a safe price)
 
 export interface BacktestOutcome {
   prediction: BacktestPrediction;
@@ -165,6 +173,12 @@ export function runBacktest(preSaleInput: UnderwritingInput, actuals: BacktestAc
   const wouldWeBid = BUY_VERDICTS.includes(result.verdict) && prediction.predictedMaxSafeBid >= tender && tender > 0;
   const couldWeHaveWon = prediction.predictedMaxSafeBid >= winning && winning > 0;
   const { decision, rationale } = classifyDecision(preSaleInput, prediction, actuals, couldWeHaveWon);
+  const bidClass: BidClass =
+    winning > prediction.predictedMaxSafeBid
+      ? "OVERBID"
+      : winning <= prediction.predictedTargetBid
+        ? "BOUGHT_WITHIN_SAFE"
+        : "ABOVE_TARGET_BELOW_MAX";
 
   const comparison: BacktestComparison = {
     minimumTender: tender,
@@ -182,6 +196,7 @@ export function runBacktest(preSaleInput: UnderwritingInput, actuals: BacktestAc
     rentErrorPct: errPct(prediction.predictedMonthlyRent, actuals.actualMonthlyRent),
     decision,
     decisionRationale: rationale,
+    bidClass,
   };
 
   return { prediction, comparison };
@@ -207,11 +222,18 @@ export interface BacktestScorecard {
   outbidOnWanted: number;
   avgValuationErrorPct: number | null;
   medianValuationErrorPct: number | null;
+  medianAbsValuationErrorPct: number | null;
   avgArvErrorPct: number | null;
   avgRenovationErrorPct: number | null;
   medianRenovationErrorPct: number | null;
+  medianAbsRenovationErrorPct: number | null;
   avgRentErrorPct: number | null;
   medianRentErrorPct: number | null;
+  medianAbsRentErrorPct: number | null;
+  // Bid-gap classification (could-have-won ≠ should-have-bought).
+  boughtWithinSafe: number;
+  aboveTargetBelowMax: number;
+  overbid: number;
   avgPredictedDiscountToWinningBid: number;
   totalCapitalIfBidAtMaxSafe: number;
   // Decision quality (the metrics we care about most; false BUY first).
@@ -276,11 +298,17 @@ export function scoreBacktests(items: BacktestScoreItem[]): BacktestScorecard {
     outbidOnWanted: outs.filter((o) => o.comparison.wouldWeBid && !o.comparison.couldWeHaveWon).length,
     avgValuationErrorPct: avg(valErr),
     medianValuationErrorPct: mVal,
+    medianAbsValuationErrorPct: median(valErr.map(Math.abs)),
     avgArvErrorPct: avg(arvErr),
     avgRenovationErrorPct: avg(renoErr),
     medianRenovationErrorPct: mReno,
+    medianAbsRenovationErrorPct: median(renoErr.map(Math.abs)),
     avgRentErrorPct: avg(rentErr),
     medianRentErrorPct: mRent,
+    medianAbsRentErrorPct: median(rentErr.map(Math.abs)),
+    boughtWithinSafe: outs.filter((o) => o.comparison.bidClass === "BOUGHT_WITHIN_SAFE").length,
+    aboveTargetBelowMax: outs.filter((o) => o.comparison.bidClass === "ABOVE_TARGET_BELOW_MAX").length,
+    overbid: outs.filter((o) => o.comparison.bidClass === "OVERBID").length,
     avgPredictedDiscountToWinningBid: avg(outs.map((o) => o.comparison.predictedDiscountToWinningBid)) ?? 0,
     totalCapitalIfBidAtMaxSafe: round2(
       outs.filter((o) => o.comparison.wouldWeHaveWonIt).reduce((s, o) => s + o.comparison.actualWinningBid, 0),

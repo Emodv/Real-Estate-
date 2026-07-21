@@ -6,11 +6,12 @@ import type {
   Swot,
   RiskItem,
   RiskCategory,
+  RentScenario,
 } from "./types";
 import type { ScoredComp } from "./comps";
 import type { RefinanceScenario } from "./refinanceScenarios";
 import type { RenovationModel } from "./renovationModel";
-import { num, round2 } from "./money";
+import { num } from "./money";
 
 /**
  * Investment Committee Memo builder.
@@ -81,10 +82,15 @@ export interface MemoValuation {
 }
 
 export interface MemoRental {
-  rentLowIllustrative: number;
+  rentLow: number;
   rentBase: number;
-  rentHighIllustrative: number;
-  grossAnnualRent: number;
+  rentHigh: number;
+  rentMethod: string;
+  rentIllustrative: boolean;
+  rentConfidence: number;
+  rentScenarios: { low: RentScenario; base: RentScenario; high: RentScenario };
+  grossPotentialRent: number;
+  vacancy: number;
   effectiveGrossIncome: number;
   operatingExpenses: number;
   noi: number;
@@ -93,7 +99,7 @@ export interface MemoRental {
   capRate: number;
   dscr: number;
   cashOnCash: number | null;
-  opexBreakdown: Array<{ label: string; annual: number; status: string }>;
+  opexItems: Array<{ label: string; amount: number; basis: string; status: string }>;
 }
 
 export interface MemoBrrrr {
@@ -324,31 +330,25 @@ function buildValuation(input: UnderwritingInput, result: UnderwritingResult): M
 
 function buildRental(input: UnderwritingInput, result: UnderwritingResult): MemoRental {
   const m = result.bid.atMaxSafeBid;
-  const rentBase = num(input.rental.monthlyMarketRent);
-  const egi = m.effectiveGrossIncome;
-  const opexBreakdown = [
-    { label: "Property taxes", annual: num(input.rental.annualPropertyTax), status: "ESTIMATED" },
-    { label: "Insurance", annual: num(input.rental.annualInsurance), status: "ESTIMATED" },
-    { label: "Utilities (landlord)", annual: num(input.rental.annualUtilities), status: "ESTIMATED" },
-    { label: "Maintenance/repairs reserve", annual: round2(egi * num(input.rental.maintenancePct)), status: "ASSUMED" },
-    { label: "Property management", annual: round2(egi * num(input.rental.managementPct)), status: "ASSUMED" },
-    { label: "CapEx reserve", annual: round2(egi * num(input.rental.capexPct)), status: "ASSUMED" },
-    { label: "Other operating expenses", annual: num(input.rental.otherAnnualOpEx), status: "ASSUMED" },
-  ];
   return {
-    rentLowIllustrative: round2(rentBase * 0.9), // illustrative band, presentation-only
-    rentBase,
-    rentHighIllustrative: round2(rentBase * 1.1),
-    grossAnnualRent: m.grossAnnualRent,
-    effectiveGrossIncome: egi,
-    operatingExpenses: m.operatingExpenses,
-    noi: m.noi,
+    rentLow: result.rent.low,
+    rentBase: result.rent.base,
+    rentHigh: result.rent.high,
+    rentMethod: result.rent.method,
+    rentIllustrative: result.rent.illustrative,
+    rentConfidence: result.rent.confidence,
+    rentScenarios: result.rentScenarios,
+    grossPotentialRent: result.noiBreakdown.grossPotentialRent,
+    vacancy: result.noiBreakdown.vacancy,
+    effectiveGrossIncome: result.noiBreakdown.effectiveGrossIncome,
+    operatingExpenses: result.noiBreakdown.operatingExpenses,
+    noi: result.noiBreakdown.noi,
     monthlyCashFlow: m.monthlyCashFlow,
     annualCashFlow: m.annualCashFlow,
     capRate: m.capRate,
     dscr: m.dscr,
     cashOnCash: m.cashOnCash,
-    opexBreakdown,
+    opexItems: result.operatingExpenses,
   };
 }
 

@@ -100,6 +100,21 @@ export const renoLineItemSchema = z.object({
   note: z.string().optional(),
 });
 
+export const rentalCompSchema = z.object({
+  address: z.string().optional(),
+  monthlyRent: money,
+  dateObserved: z.string().optional(),
+  bedrooms: z.coerce.number().optional(),
+  bathrooms: z.coerce.number().optional(),
+  buildingSqft: z.coerce.number().optional(),
+  propertyType: z.string().optional(),
+  distanceKm: z.coerce.number().optional(),
+  furnished: z.coerce.boolean().optional(),
+  utilitiesIncluded: z.coerce.boolean().optional(),
+  source: z.string().min(1),
+  dataStatus: dataStatusEnum,
+});
+
 export const underwritingInputSchema = z.object({
   meta: z.object({
     propertyType: z.string().optional(),
@@ -195,6 +210,7 @@ export const underwritingInputSchema = z.object({
   strategy: z.enum(["BRRRR", "CASH_FLOW", "FLIP", "LAND"]).optional(),
   comps: z.array(compSchema).optional(),
   renovationLineItems: z.array(renoLineItemSchema).optional(),
+  rentalComps: z.array(rentalCompSchema).optional(),
 });
 
 // Compile-time assurance that the parsed output matches the engine's input type.

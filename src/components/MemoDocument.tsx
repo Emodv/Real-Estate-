@@ -152,20 +152,43 @@ export function MemoDocument({
 
       {/* Rental */}
       <Sec title="Rental Economics" breakBefore>
+        <div className="mb-2 text-xs">
+          <b>Rent — Low / Base / High:</b> {money(memo.rental.rentLow)} / {money(memo.rental.rentBase)} / {money(memo.rental.rentHigh)}{" "}
+          <span className="text-gray-500">({memo.rental.rentMethod}{memo.rental.rentIllustrative ? " — illustrative" : ""}; confidence {memo.rental.rentConfidence}/100)</span>
+        </div>
+        <table className="mb-3 w-full text-[11px]">
+          <thead className="border-b border-gray-400 text-left"><tr><th className="py-1">Rent scenario</th><th>Monthly rent</th><th>NOI</th><th>Cash flow/mo</th></tr></thead>
+          <tbody>
+            {(["low", "base", "high"] as const).map((k) => (
+              <tr key={k} className="border-b border-gray-200">
+                <td className="py-1 capitalize">{k}{k === "base" ? " (used for the bid)" : ""}</td>
+                <td className="tnum">{money(memo.rental.rentScenarios[k].monthlyRent)}</td>
+                <td className="tnum">{money(memo.rental.rentScenarios[k].noi)}</td>
+                <td className="tnum">{money(memo.rental.rentScenarios[k].monthlyCashFlow)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <table className="mb-3 w-full text-[11px]">
+          <thead className="border-b border-gray-400 text-left"><tr><th className="py-1">Operating expense</th><th>Basis</th><th>Status</th><th>Annual</th></tr></thead>
+          <tbody>
+            <tr className="border-b border-gray-200"><td className="py-1">Gross potential rent</td><td>—</td><td>—</td><td className="tnum">{money(memo.rental.grossPotentialRent)}</td></tr>
+            <tr className="border-b border-gray-200"><td className="py-1">Vacancy</td><td>% of GPR</td><td>ASSUMED</td><td className="tnum">−{money(memo.rental.vacancy)}</td></tr>
+            <tr className="border-b border-gray-300 font-semibold"><td className="py-1">Effective gross income</td><td></td><td></td><td className="tnum">{money(memo.rental.effectiveGrossIncome)}</td></tr>
+            {memo.rental.opexItems.map((o, i) => (
+              <tr key={i} className="border-b border-gray-200"><td className="py-1">{o.label}</td><td>{o.basis}</td><td>{o.status}</td><td className="tnum">−{money(o.amount)}</td></tr>
+            ))}
+            <tr className="border-t-2 border-gray-700 font-bold"><td className="py-1">NOI</td><td></td><td></td><td className="tnum">{money(memo.rental.noi)}</td></tr>
+          </tbody>
+        </table>
         <Grid>
-          <KV k="Rent (base)" v={money(memo.rental.rentBase)} />
-          <KV k="Rent band (illustrative)" v={`${money(memo.rental.rentLowIllustrative)} – ${money(memo.rental.rentHighIllustrative)}`} />
-          <KV k="Gross annual rent" v={money(memo.rental.grossAnnualRent)} />
-          <KV k="Effective gross income" v={money(memo.rental.effectiveGrossIncome)} />
-          <KV k="Operating expenses" v={money(memo.rental.operatingExpenses)} />
-          <KV k="NOI" v={money(memo.rental.noi)} strong />
           <KV k="Monthly cash flow" v={money(memo.rental.monthlyCashFlow)} strong />
           <KV k="Annual cash flow" v={money(memo.rental.annualCashFlow)} />
           <KV k="Cap rate" v={pct(memo.rental.capRate)} />
           <KV k="DSCR" v={ratio(memo.rental.dscr)} />
           <KV k="Cash-on-cash" v={memo.rental.cashOnCash === null ? "∞" : pct(memo.rental.cashOnCash)} />
         </Grid>
-        <p className="mt-1 text-xs text-gray-500">Gross rent ≠ NOI ≠ cash flow. NOI is unlevered; cash flow is after the refinanced mortgage.</p>
+        <p className="mt-1 text-xs text-gray-500">Gross rent ≠ NOI ≠ cash flow. NOI is unlevered; cash flow is after the refinanced mortgage. The Max Safe Bid uses BASE rent, never the high.</p>
       </Sec>
 
       {/* BRRRR */}
