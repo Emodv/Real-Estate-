@@ -10,6 +10,7 @@ Copy `.env.example` → `.env.local` and fill in values. Never commit `.env.loca
 | `NEXT_PUBLIC_SUPABASE_URL` | supabase | Supabase project URL. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | supabase | Public anon key (safe for client; RLS protects data). |
 | `SUPABASE_SERVICE_ROLE_KEY` | supabase (server only) | Privileged server ops / tooling. **Never** expose to client. |
+| `GOOGLE_MAPS_API_KEY` | optional (server only) | Geocoding for the subject + comparables so the engine derives real distances. Falls back to manual lat/lng when absent. |
 | `ANTHROPIC_API_KEY` | Phase 4+ | Server-only. |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Phase 4+ | Server-only. |
 | `OPENAI_API_KEY` | Phase 4+ | Server-only. |

@@ -35,6 +35,20 @@ export async function createPropertyAction(payload: CreatePropertyPayload) {
   redirect(`/properties/${record.id}`);
 }
 
+/**
+ * Optional geocoding enrichment. Uses GOOGLE_MAPS_API_KEY on the server only.
+ * Returns null when geocoding is disabled or the address can't be resolved —
+ * callers fall back to manual coordinate entry.
+ */
+export async function geocodeAddressAction(
+  address: string,
+): Promise<{ lat: number; lng: number; formattedAddress: string } | null> {
+  const { geocodeAddress } = await import("@/lib/geo/google");
+  const result = await geocodeAddress(address);
+  if (!result) return null;
+  return { ...result.coords, formattedAddress: result.formattedAddress };
+}
+
 export async function deletePropertyAction(id: string) {
   const store = getPropertyStore();
   await store.remove(id);

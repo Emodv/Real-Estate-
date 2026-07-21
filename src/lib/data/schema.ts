@@ -46,6 +46,8 @@ export const evidenceSchema = z.object({
   sourceType: z.string().optional(),
   date: z.string().optional(),
   distanceKm: z.coerce.number().optional(),
+  lat: z.coerce.number().optional(),
+  lng: z.coerce.number().optional(),
   dataStatus: z.enum([
     "VERIFIED",
     "ESTIMATED",
@@ -64,6 +66,8 @@ export const underwritingInputSchema = z.object({
     lotSizeAcres: z.coerce.number().optional(),
     bedrooms: z.coerce.number().optional(),
     bathrooms: z.coerce.number().optional(),
+    lat: z.coerce.number().optional(),
+    lng: z.coerce.number().optional(),
   }),
   taxSale: z.object({
     minimumTender: money,

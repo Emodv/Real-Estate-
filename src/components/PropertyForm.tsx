@@ -5,7 +5,7 @@ import { DEFAULT_INPUT } from "@/lib/underwriting";
 import type { RiskItem, EvidenceItem } from "@/lib/underwriting";
 import { SAMPLE_PROPERTY_INPUT } from "@/lib/data/sample";
 import { withDefaults } from "@/lib/underwriting";
-import { createPropertyAction } from "@/app/actions";
+import { createPropertyAction, geocodeAddressAction } from "@/app/actions";
 import { Card, Section, Badge } from "./ui";
 
 // Loose, form-friendly clone of the input (numbers held as-is).
@@ -23,6 +23,8 @@ export function PropertyForm() {
   const [input, setInput] = React.useState<FormInput>(clone(DEFAULT_INPUT));
   const [pending, setPending] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [geoMsg, setGeoMsg] = React.useState<string | null>(null);
+  const [geoBusy, setGeoBusy] = React.useState(false);
 
   function num(path: string, value: string) {
     setInput((prev) => {
@@ -53,6 +55,25 @@ export function PropertyForm() {
     setMunicipality("Sample Township");
     setCounty("Sample County");
     setAddress("123 Example Rd (illustrative)");
+  }
+
+  async function geocodeSubject() {
+    setGeoBusy(true);
+    setGeoMsg(null);
+    const query = [address, municipality, county, "Ontario, Canada"].filter(Boolean).join(", ");
+    const res = await geocodeAddressAction(query);
+    setGeoBusy(false);
+    if (!res) {
+      setGeoMsg("Geocoding unavailable or address not found. Set GOOGLE_MAPS_API_KEY, or enter lat/lng manually.");
+      return;
+    }
+    setInput((prev) => {
+      const next = clone(prev);
+      setPath(next as unknown as Record<string, unknown>, "meta.lat", res.lat);
+      setPath(next as unknown as Record<string, unknown>, "meta.lng", res.lng);
+      return next;
+    });
+    setGeoMsg(`Located: ${res.formattedAddress} (${res.lat.toFixed(5)}, ${res.lng.toFixed(5)})`);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -96,11 +117,26 @@ export function PropertyForm() {
           <Num label="Lot size (acres)" path="meta.lotSizeAcres" input={input} onNum={num} />
           <Num label="Bedrooms" path="meta.bedrooms" input={input} onNum={num} />
           <Num label="Bathrooms" path="meta.bathrooms" input={input} onNum={num} />
+          <Num label="Latitude" path="meta.lat" input={input} onNum={num} step="0.00001" />
+          <Num label="Longitude" path="meta.lng" input={input} onNum={num} step="0.00001" />
         </div>
-        <div className="mt-3 flex gap-6">
+        <div className="mt-3 flex flex-wrap items-center gap-6">
           <Check label="Waterfront" checked={!!input.meta.waterfront} onChange={(v) => bool("meta.waterfront", v)} />
           <Check label="Rural" checked={!!input.meta.rural} onChange={(v) => bool("meta.rural", v)} />
+          <button
+            type="button"
+            onClick={geocodeSubject}
+            disabled={geoBusy}
+            className="rounded-md border border-border bg-surface2 px-3 py-1.5 text-xs hover:bg-border disabled:opacity-50"
+          >
+            {geoBusy ? "Locating…" : "📍 Geocode address (Google Maps)"}
+          </button>
         </div>
+        {geoMsg && <p className="mt-2 text-xs text-muted">{geoMsg}</p>}
+        <p className="mt-1 text-xs text-muted/70">
+          Geocoding the subject + comparables lets the engine derive real distances, which raises
+          valuation confidence for nearby comps.
+        </p>
       </Section>
 
       <Section title="Tax Sale">
@@ -396,7 +432,16 @@ function EvidenceEditor({ evidence, onChange }: { evidence: EvidenceItem[]; onCh
                 <span className="mb-1 block text-xs text-muted">Distance (km)</span>
                 <input type="number" step="any" value={e.distanceKm ?? ""} onChange={(ev) => update(i, { distanceKm: ev.target.value === "" ? undefined : Number(ev.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" />
               </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-muted">Latitude (optional)</span>
+                <input type="number" step="any" value={e.lat ?? ""} onChange={(ev) => update(i, { lat: ev.target.value === "" ? undefined : Number(ev.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-muted">Longitude (optional)</span>
+                <input type="number" step="any" value={e.lng ?? ""} onChange={(ev) => update(i, { lng: ev.target.value === "" ? undefined : Number(ev.target.value) })} className="w-full rounded-md border border-border bg-surface2 px-3 py-2 text-sm tnum outline-none focus:border-accent" />
+              </label>
             </div>
+            <p className="mt-1 text-xs text-muted/70">If distance is blank but lat/lng are set (and the subject is geocoded), the engine computes distance automatically.</p>
             <div className="mt-2 flex items-center gap-3">
               <div className="w-56">
                 <Select label="Data status" value={e.dataStatus} onChange={(v) => update(i, { dataStatus: v as EvidenceItem["dataStatus"] })} options={STATUSES.map((c) => [c, c])} />

@@ -12,6 +12,7 @@ import { computeConfidence } from "./confidence";
 import { computeScore } from "./score";
 import { computeSwot } from "./swot";
 import { computeVerdict, buildCommittee } from "./verdict";
+import { withDerivedDistances } from "@/lib/geo/distance";
 
 /**
  * The single public entry point for underwriting.
@@ -21,8 +22,11 @@ import { computeVerdict, buildCommittee } from "./verdict";
  * recency (which is derived from evidence dates and is itself deterministic
  * given "now").
  */
-export function underwrite(input: UnderwritingInput): UnderwritingResult {
+export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
   const warnings: string[] = [];
+  // Pure enrichment: derive comparable distances from geocoded coordinates
+  // when available. No network — coordinates in, distances out.
+  const input = withDerivedDistances(rawInput);
 
   // 1) Bid ceilings & the binding constraint -> maximum safe bid.
   const ceilings = computeCeilings(input);

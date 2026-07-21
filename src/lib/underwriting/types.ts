@@ -48,6 +48,10 @@ export interface EvidenceItem {
   sourceType?: string;
   date?: string; // ISO date
   distanceKm?: number;
+  /** Optional geocoded coordinates. When present with the subject's coords, the
+   *  engine derives `distanceKm` automatically (Google Geocoding, see lib/geo). */
+  lat?: number;
+  lng?: number;
   dataStatus: DataStatus;
 }
 
@@ -198,6 +202,9 @@ export interface PropertyMeta {
   lotSizeAcres?: number;
   bedrooms?: number;
   bathrooms?: number;
+  /** Optional geocoded coordinates of the subject property (Google Geocoding). */
+  lat?: number;
+  lng?: number;
 }
 
 export interface UnderwritingInput {
