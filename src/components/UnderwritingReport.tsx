@@ -2,6 +2,7 @@ import * as React from "react";
 import type { UnderwritingInput, UnderwritingResult } from "@/lib/underwriting";
 import { Badge, Card, Meter, Row, Section, Stat } from "./ui";
 import { ShowMath } from "./ShowMath";
+import { ReasonsPanel, AnalyticsSections } from "./Phase2Sections";
 import { money, pct, ratio, VERDICT_LABEL, verdictTone, severityTone } from "@/lib/format";
 
 const CEILING_LABEL: Record<string, string> = {
@@ -61,6 +62,9 @@ export function UnderwritingReport({
           </ul>
         )}
       </Card>
+
+      {/* Top reasons to buy / not buy (deal-killer mode) */}
+      <ReasonsPanel result={result} />
 
       {/* Bid strategy */}
       <Section
@@ -150,6 +154,9 @@ export function UnderwritingReport({
           </div>
         </div>
       </Section>
+
+      {/* Phase 2 analytics: valuation, comps, renovation model, refi scenarios, sensitivity */}
+      <AnalyticsSections input={input} result={result} />
 
       {/* Deal killers */}
       <Section

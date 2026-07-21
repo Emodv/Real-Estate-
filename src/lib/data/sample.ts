@@ -70,6 +70,11 @@ export const SAMPLE_PROPERTY_INPUT: DeepPartial<UnderwritingInput> = {
     minMonthlyCashFlow: 0,
     maxCapitalTrapped: 30000,
   },
+  comps: [
+    { address: "Comp A — 3BR detached", salePrice: 430000, saleDate: "2025-05-10", propertyType: "Detached house", lotAcres: 2.0, bedrooms: 3, bathrooms: 1, distanceKm: 3.2, source: "Local MLS (user-provided)", dataStatus: "USER_PROVIDED" },
+    { address: "Comp B — 3BR detached", salePrice: 405000, saleDate: "2025-03-22", propertyType: "Detached house", lotAcres: 1.8, bedrooms: 3, bathrooms: 1, distanceKm: 6.1, source: "Local MLS (user-provided)", dataStatus: "USER_PROVIDED" },
+    { address: "Comp C — 4BR detached", salePrice: 415000, saleDate: "2025-06-01", propertyType: "Detached house", lotAcres: 2.5, bedrooms: 4, bathrooms: 2, distanceKm: 8.4, source: "Local MLS (user-provided)", dataStatus: "USER_PROVIDED" },
+  ],
   evidence: [
     {
       claim: "Comparable sale A",

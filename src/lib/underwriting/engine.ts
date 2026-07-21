@@ -13,6 +13,61 @@ import { computeScore } from "./score";
 import { computeSwot } from "./swot";
 import { computeVerdict, buildCommittee } from "./verdict";
 import { withDerivedDistances } from "@/lib/geo/distance";
+import { scoreComps, DEFAULT_COMP_WEIGHTS, type ScoredComp } from "./comps";
+import { deriveMarketValue, type MarketValuation } from "./valuation";
+import { buildRenovationModel } from "./renovationModel";
+import { renovationRaw } from "./renovation";
+import { refinanceScenarios } from "./refinanceScenarios";
+import { sensitivity } from "./sensitivity";
+import { computeReasons } from "./reasons";
+
+/**
+ * Comps → valuation pre-step. Scores comparables and, when the user has NOT
+ * supplied explicit market values (fields left at 0), seeds the conservative
+ * as-is / base / ARV values from the comp-derived valuation. Explicit
+ * user-entered values always take precedence — comps never silently override
+ * a figure the analyst set deliberately.
+ */
+function applyValuation(input: UnderwritingInput): {
+  input: UnderwritingInput;
+  scoredComps: ScoredComp[];
+  valuation: MarketValuation | null;
+} {
+  const comps = input.comps ?? [];
+  if (comps.length === 0) return { input, scoredComps: [], valuation: null };
+
+  const scoredComps = scoreComps(
+    {
+      propertyType: input.meta.propertyType,
+      buildingSqft: undefined,
+      lotAcres: input.meta.lotSizeAcres,
+      bedrooms: input.meta.bedrooms,
+      bathrooms: input.meta.bathrooms,
+      lat: input.meta.lat,
+      lng: input.meta.lng,
+    },
+    comps,
+    input.compWeights ?? DEFAULT_COMP_WEIGHTS,
+  );
+  const valuation = deriveMarketValue(
+    { lotAcres: input.meta.lotSizeAcres, bedrooms: input.meta.bedrooms, bathrooms: input.meta.bathrooms, propertyType: input.meta.propertyType },
+    scoredComps,
+    { assessment: input.value.assessment },
+  );
+  if (!valuation) return { input, scoredComps, valuation: null };
+
+  const value = { ...input.value };
+  if (num(value.conservativeAsIs) <= 0) value.conservativeAsIs = valuation.low;
+  if (num(value.baseValue) <= 0) value.baseValue = valuation.base;
+  // Conservative default: ARV = comp-derived base (renovation brings the
+  // property TO market, not above it) unless the analyst set ARV explicitly.
+  if (num(value.conservativeArv) <= 0) value.conservativeArv = valuation.base;
+
+  const refinance =
+    num(input.refinance.arv) <= 0 ? { ...input.refinance, arv: valuation.base } : input.refinance;
+
+  return { input: { ...input, value, refinance }, scoredComps, valuation };
+}
 
 /**
  * The single public entry point for underwriting.
@@ -26,7 +81,9 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
   const warnings: string[] = [];
   // Pure enrichment: derive comparable distances from geocoded coordinates
   // when available. No network — coordinates in, distances out.
-  const input = withDerivedDistances(rawInput);
+  const distanced = withDerivedDistances(rawInput);
+  // Comps -> valuation, seeding blank value inputs (see applyValuation).
+  const { input, scoredComps, valuation } = applyValuation(distanced);
 
   // 1) Bid ceilings & the binding constraint -> maximum safe bid.
   const ceilings = computeCeilings(input);
@@ -86,7 +143,27 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
     valueMathLines: valueCeilingMath(input, valueCeilingAmount),
   };
 
+  // 7) Phase 2 intelligence: renovation model, multi-LTV refi, sensitivity, reasons.
+  const renovationModel = buildRenovationModel(
+    input.renovationLineItems,
+    num(input.renovation.contingencyPct),
+    renovationRaw(input.renovation),
+  );
+  const refiScenarios = refinanceScenarios(input, maxSafeBid);
+  const sens = sensitivity(input);
+  const reasons = computeReasons(input, {
+    maxSafeBid,
+    atMaxSafeBid,
+    score,
+    risk: dealKillers,
+    confidence,
+    valuation,
+  });
+
+  const strategy = input.strategy ?? "BRRRR";
+
   return {
+    strategy,
     verdict,
     bid,
     brrrrAtMinTender: atMinimumTender,
@@ -96,5 +173,11 @@ export function underwrite(rawInput: UnderwritingInput): UnderwritingResult {
     confidence,
     committee,
     warnings,
+    scoredComps,
+    valuation,
+    renovationModel,
+    refinanceScenarios: refiScenarios,
+    sensitivity: sens,
+    reasons,
   };
 }

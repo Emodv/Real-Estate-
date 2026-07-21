@@ -58,6 +58,48 @@ export const evidenceSchema = z.object({
   ]),
 });
 
+const dataStatusEnum = z.enum([
+  "VERIFIED",
+  "ESTIMATED",
+  "INFERRED",
+  "USER_PROVIDED",
+  "AI_SUGGESTED",
+  "UNKNOWN",
+]);
+
+export const compSchema = z.object({
+  id: z.string().optional(),
+  address: z.string().optional(),
+  salePrice: money,
+  saleDate: z.string().optional(),
+  propertyType: z.string().optional(),
+  buildingSqft: z.coerce.number().optional(),
+  lotAcres: z.coerce.number().optional(),
+  bedrooms: z.coerce.number().optional(),
+  bathrooms: z.coerce.number().optional(),
+  yearBuilt: z.coerce.number().optional(),
+  condition: z.string().optional(),
+  distanceKm: z.coerce.number().optional(),
+  lat: z.coerce.number().optional(),
+  lng: z.coerce.number().optional(),
+  source: z.string().min(1),
+  sourceType: z.string().optional(),
+  dataStatus: dataStatusEnum,
+});
+
+export const renoLineItemSchema = z.object({
+  category: z.enum([
+    "ROOF", "FOUNDATION", "STRUCTURAL", "ELECTRICAL", "PLUMBING", "HVAC",
+    "WINDOWS", "INSULATION", "KITCHEN", "BATHROOMS", "FLOORING", "PAINT",
+    "EXTERIOR", "LANDSCAPING", "APPLIANCES", "SEPTIC", "WELL", "OTHER",
+  ]),
+  status: z.enum(["KNOWN", "ESTIMATED", "ASSUMED", "UNKNOWN"]),
+  low: money,
+  base: money,
+  high: money,
+  note: z.string().optional(),
+});
+
 export const underwritingInputSchema = z.object({
   meta: z.object({
     propertyType: z.string().optional(),
@@ -149,6 +191,9 @@ export const underwritingInputSchema = z.object({
   }),
   risks: z.array(riskSchema).default([]),
   evidence: z.array(evidenceSchema).default([]),
+  strategy: z.enum(["BRRRR", "CASH_FLOW", "FLIP", "LAND"]).optional(),
+  comps: z.array(compSchema).optional(),
+  renovationLineItems: z.array(renoLineItemSchema).optional(),
 });
 
 // Compile-time assurance that the parsed output matches the engine's input type.

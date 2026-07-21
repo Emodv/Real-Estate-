@@ -207,6 +207,9 @@ export interface PropertyMeta {
   lng?: number;
 }
 
+/** Which underwriting model dominates the decision for this property. */
+export type UnderwritingStrategy = "BRRRR" | "CASH_FLOW" | "FLIP" | "LAND";
+
 export interface UnderwritingInput {
   meta: PropertyMeta;
   taxSale: TaxSaleInput;
@@ -222,6 +225,11 @@ export interface UnderwritingInput {
   bidShape: BidShapeInput;
   risks: RiskItem[];
   evidence: EvidenceItem[];
+  /** Optional Phase 2 additions (all backward-compatible / default empty). */
+  strategy?: UnderwritingStrategy;
+  comps?: import("./comps").CompProperty[];
+  compWeights?: import("./comps").CompWeights;
+  renovationLineItems?: import("./renovationModel").RenoLineItem[];
 }
 
 // ---------------------------------------------------------------------------
@@ -354,6 +362,7 @@ export interface InvestmentCommittee {
 }
 
 export interface UnderwritingResult {
+  strategy: UnderwritingStrategy;
   verdict: Verdict;
   bid: BidStrategy;
   brrrrAtMinTender: BrrrrResult;
@@ -363,4 +372,11 @@ export interface UnderwritingResult {
   confidence: ConfidenceScore;
   committee: InvestmentCommittee;
   warnings: string[];
+  // Phase 2 intelligence
+  scoredComps: import("./comps").ScoredComp[];
+  valuation: import("./valuation").MarketValuation | null;
+  renovationModel: import("./renovationModel").RenovationModel;
+  refinanceScenarios: import("./refinanceScenarios").RefinanceScenario[];
+  sensitivity: import("./sensitivity").SensitivityResult;
+  reasons: import("./reasons").ReasonsResult;
 }

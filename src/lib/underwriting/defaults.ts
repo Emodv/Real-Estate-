@@ -92,6 +92,9 @@ export const DEFAULT_INPUT: UnderwritingInput = {
   },
   risks: [],
   evidence: [],
+  strategy: "BRRRR",
+  comps: [],
+  renovationLineItems: [],
 };
 
 /** Deep-merge a partial input over the conservative defaults. */
@@ -111,6 +114,12 @@ export function withDefaults(partial: DeepPartial<UnderwritingInput>): Underwrit
     bidShape: { ...DEFAULT_INPUT.bidShape, ...partial.bidShape },
     risks: partial.risks ? (partial.risks as UnderwritingInput["risks"]) : [],
     evidence: partial.evidence ? (partial.evidence as UnderwritingInput["evidence"]) : [],
+    strategy: partial.strategy ?? DEFAULT_INPUT.strategy,
+    comps: partial.comps ? (partial.comps as UnderwritingInput["comps"]) : [],
+    compWeights: partial.compWeights as UnderwritingInput["compWeights"],
+    renovationLineItems: partial.renovationLineItems
+      ? (partial.renovationLineItems as UnderwritingInput["renovationLineItems"])
+      : [],
   };
 }
 
