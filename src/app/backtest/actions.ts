@@ -14,6 +14,7 @@ const actualsSchema = z.object({
   actualArv: z.coerce.number().optional(),
   actualRenovation: z.coerce.number().optional(),
   actualMonthlyRent: z.coerce.number().optional(),
+  actualRefinanceValue: z.coerce.number().optional(),
   notes: z.string().optional(),
 });
 

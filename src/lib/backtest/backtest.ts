@@ -31,6 +31,8 @@ export interface BacktestActuals {
   actualArv?: number;
   actualRenovation?: number;
   actualMonthlyRent?: number;
+  /** Lender refinance valuation actually achieved, if known (post-sale). */
+  actualRefinanceValue?: number;
   notes?: string;
 }
 
@@ -41,6 +43,7 @@ export interface BacktestPrediction {
   predictedArv: number;
   predictedRenovation: number;
   predictedMonthlyRent: number;
+  predictedNoi: number;
   predictedConservativeBid: number;
   predictedTargetBid: number;
   predictedMaxSafeBid: number;
@@ -158,6 +161,7 @@ export function runBacktest(preSaleInput: UnderwritingInput, actuals: BacktestAc
     predictedArv: num(preSaleInput.refinance.arv),
     predictedRenovation: result.renovationModel.baseWithContingency,
     predictedMonthlyRent: num(preSaleInput.rental.monthlyMarketRent),
+    predictedNoi: result.noiBreakdown.noi,
     predictedConservativeBid: result.bid.conservativeBid,
     predictedTargetBid: result.bid.targetBid,
     predictedMaxSafeBid: result.bid.maximumSafeBid,

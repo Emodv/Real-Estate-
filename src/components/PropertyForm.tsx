@@ -111,6 +111,12 @@ export function PropertyForm() {
           Load sample data
         </button>
       </div>
+      <div className="rounded-lg border border-accent/30 bg-accent/5 px-4 py-2 text-xs text-muted">
+        <b className="text-accent">🔒 Building a historical backtest?</b> Enter only information that was
+        available <b>before</b> the tax sale (comps sold before the sale date, pre-sale assumptions).
+        The actual winning bid and post-sale results are entered separately under{" "}
+        <span className="text-text">Backtest</span> — never here.
+      </div>
 
       {error && (
         <Card className="border-bad/40">

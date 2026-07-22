@@ -58,6 +58,21 @@ describe("runBacktest — hindsight protection", () => {
   });
 });
 
+describe("Phase 3.6 backtest data-model additions", () => {
+  it("predictedNoi equals the engine NOI and is independent of actuals", () => {
+    const a = runBacktest(SAMPLE_PROPERTY, { actualWinningBid: 100000 });
+    const b = runBacktest(SAMPLE_PROPERTY, { actualWinningBid: 999999, actualMonthlyRent: 1 });
+    expect(a.prediction.predictedNoi).toBe(b.prediction.predictedNoi);
+    expect(a.prediction.predictedNoi).toBeGreaterThan(0);
+  });
+
+  it("actualRefinanceValue is accepted without affecting the prediction", () => {
+    const withRefi = runBacktest(SAMPLE_PROPERTY, { actualWinningBid: 120000, actualRefinanceValue: 350000 });
+    const without = runBacktest(SAMPLE_PROPERTY, { actualWinningBid: 120000 });
+    expect(JSON.stringify(withRefi.prediction)).toBe(JSON.stringify(without.prediction));
+  });
+});
+
 describe("decision classification (false BUY / false PASS)", () => {
   it("flags a FALSE_BUY when reality (actuals) makes a recommended deal fail", () => {
     // Pre-sale looks buyable; actuals reveal much worse value + rent + reno.
